@@ -1,1 +1,688 @@
-Hello World
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script src="jquery-3.1.1.min.js"></script>
+	<style>
+		
+
+
+	.result-box {
+		width: 100%;
+		overflow: hidden;
+	}
+	.row {
+		width: 100%;
+		margin-bottom: 20px;
+		display: block;
+		overflow: hidden;
+		border-bottom: 1px solid #000;
+		padding-bottom: 5px;
+
+
+	}
+	.col {
+		float: left;
+		color:#555;
+		text-align: center;
+		border-right: 1px solid rgba(0,0,0, .2);
+		box-sizing: border-box;
+		padding: 0 5px;
+	}
+	.col:first-of-type {
+		color:#111;
+	}
+	.col:last-of-type {
+		border-right: none;
+	}
+	.counter {
+		width: 300px;
+		padding:5px;
+		border:none;
+		border:1px solid #555;
+		border-radius:3px;
+	}
+	.counter:focus {
+		border:1px solid #000;
+		outline: none;
+	}
+	.go {
+		padding: 10px;
+		border:none;
+		background: #000;
+		color:#fff;
+		font-weight: bold;
+		text-decoration: none;
+		cursor: pointer;
+	}
+	.fileButton {
+		padding:10px;
+	}
+	.buttonDown {
+		display: block;
+		padding:10px 20px;
+		background: #000;
+		color:#fff;
+		max-width: 100px;
+		text-align: center;
+		text-decoration: none;
+		font-weight: bold;
+	}
+	.button {
+		padding:10px 20px;
+		background: #000;
+		color:#fff;
+		border:none;
+		font-weight: bold;
+	}
+	.rowHolder {
+		display: block;
+		font-weight: normal;
+		margin-bottom: 10px;
+
+	}
+	.rowHolder span{
+		font-weight: bold;
+		font-size: 18px;
+	}
+	.infoButton {
+		font-weight: bold;
+		margin-left: 30px;
+	}
+	.holder-global {
+		max-width: 1000px;
+		margin:0 auto;
+		position: relative;
+	}
+	h1 {
+		width:100%;
+		display: block;
+		text-align: center;
+	}
+	.loader {
+		position: absolute;
+		top:0;
+		right: 0;
+		background: #000;
+		width: 50px;
+		height: 50px;
+		border-radius: 100%;
+
+	}
+
+	#registNedd,
+	#spaceNeed {
+		overflow:hidden; 
+	}
+	#registNedd input,
+	#registNedd label,
+	#spaceNeed input,
+	#spaceNeed label{
+		cursor: pointer;
+	}
+	</style>
+</head>
+<body> 
+<script>
+	
+
+</script>
+	<div class="holder-global">
+		<form enctype="multipart/form-data" action="upload.php" method="post"> <!--для сервера-->
+	    <input type="hidden" name="MAX_FILE_SIZE"  value="10000000" /><!--максимально допустимый размер файла для загрузки в байтах-->
+	    Выбрать файл для загрузки: <input name="uploaded_file" type="file" /><!--файл для загрузки-->
+	    <input type="submit" value="Отправить" class="button"/><!--кнопка загрузки-->
+		</form>
+		<br>
+		<br>
+			<h2>Правила !!!</h2>
+			<p>1. Вводить xml\2003 файлы.</p>
+			<p>2. В xml таблице <strong>ТЕКСТ</strong> может содержаться только в первом столбце.</p>
+		
+			<div id="registNedd">
+				<input type="checkbox" id="registNeddButton">
+				<label for="registNeddButton"  onselectstart="return false"> Учитывать регистр ??</label>
+			</div>
+			
+			<div id="spaceNedd">
+				<input type="checkbox" id="spaceNeddButton">
+				<label for="spaceNeddButton"  onselectstart="return false"> Учитывать пробелы ??</label>
+			</div>
+			
+		<br>
+		<br>
+		<a class="go" >Конвертировать</a>
+		<input type="text" class="counter" placeholder="Введите количество столбцов">
+		<span class="infoButton">Выходные данные напрямую зависят от количества столбцов !!!</span>
+		<br>
+		<br>
+			<strong class="rowHolder">
+				Было количество строк: 
+				<span class="countRowOld">0</span>
+			</strong>
+
+			<strong class="rowHolder">
+				Стало количество строк: 
+				<span class="countRowNew">0</span>
+			</strong>
+			<strong class="rowHolder">
+				Время выполнения: 
+				<span class="timeUp">0</span>
+			</strong>
+			<strong class="rowHolder">
+				Сократил на:  
+				<span class="procent">0</span>
+			</strong>
+		<br>
+		<a class="buttonDown" href="convertBox/convertVersion.xml" download>Выгрузить</a>
+
+		<h1>Выходные данные:</h1>
+		<br>
+		<br>
+		<!-- <div class="loader"></div> -->
+	</div>
+	
+	<div class="result-box">
+	</div>
+	
+	
+</body>
+
+	<script>
+
+		var buttonStart = $('.go');
+
+		$(buttonStart).mousedown(function() {
+			$('.infoButton').text("ВЫПОЛНЯЕТСЯ...");
+		});
+		$(buttonStart).click(function () {
+
+			var registNeed = $("#registNedd input").is(':checked');
+			var spaceNeed = $("#spaceNedd input").is(':checked');
+
+			$('.result-box .row').remove();
+
+			function getXMLDocument(url)  {  //Получение одномерного XML
+
+			    var xml;  
+
+			    if(window.XMLHttpRequest)  
+			    {  
+			        xml = new window.XMLHttpRequest();  
+			        xml.open("GET", 'upload/workSpace.xml', false);  
+			        xml.send("");  
+			        return xml.responseXML;  
+			       
+			    }  
+			    else  
+			        
+			        if(window.ActiveXObject)  
+			        {  
+			            xml=new ActiveXObject("Microsoft.XMLDOM");  
+			            xml.async=false;  
+			            xml.load(url);   
+			            return xml;   
+			        }  
+			        else  
+			        {  
+			            alert("Загрузка XML не поддерживается браузером");  
+			            return null;  
+			        }  
+			    }
+
+			    var xml = getXMLDocument();
+
+		        var allRow = xml.getElementsByTagName('Data');
+
+		        var obj = [];
+
+		        for (var c = 0;c < allRow.length;c++) {
+		        	
+		            var test = Number.isNaN(+$(allRow[c]).text());
+
+		            if (test) {
+
+		                obj.push($(allRow[c]).text());
+		            } else {
+		            	
+		                obj.push(+$(allRow[c]).text());
+		            }
+		        }
+
+			var arr = obj;
+
+			var allRowLength = xml.getElementsByTagName('Row');
+			
+			function parseArr(arrXml,count) {	//парсинг XML
+
+				var globalArr = [];
+
+				var row = arrXml.length/count;
+
+				for (var i = 0;i < row;i++) {
+					var str = "";
+					
+					globalArr[i] = new Array();
+					for (var j = 0;j < count;j++) {
+				
+						globalArr[i][j] = arrXml[(i*count)+j];
+					}
+				}
+
+				searchName(globalArr);
+				
+			}
+
+			function searchName (globalArr) {	//Поис совпадений
+
+				var jobArr = globalArr.sort();
+
+				for (var i = 0;i <= jobArr.length;i++) {
+					var counter = 0;
+					var end = [];
+
+					for (var j =i+1;j <= jobArr.length;j++) {
+
+						if (jobArr[j] != undefined && jobArr[i] != undefined) {
+
+							if (registNeed && spaceNeed) {
+
+
+								var strSearch1 = (jobArr[i][0]+"").replace(/ /ig, "").toLowerCase();
+								var strSearch2 = (jobArr[j][0]+"").replace(/ /ig, "").toLowerCase();
+
+
+
+								if (strSearch1 == strSearch2) {
+								
+									if (counter == 0) {
+
+										end.push(jobArr[j]);
+										end.push(jobArr[i]);
+
+										jobArr[j] = undefined;
+										counter++;
+
+									} else {
+
+										end.push(jobArr[j]);
+										jobArr[j] = undefined;
+
+									}
+
+								} else {
+
+									for (var s = 0;s <= jobArr.length;s++) {
+										
+										if (jobArr[i] != undefined && jobArr[s] != undefined) {
+
+											var strSearch3 = (jobArr[s][0]+"").replace(/ /ig, "");
+
+											if (strSearch1 == strSearch3) {
+												
+											} else {
+												
+												if (end.length >= 1) {
+												
+												} else {
+
+													end.push(jobArr[i]);
+													jobArr[i] = undefined;
+												}
+											}
+										} else {
+										}	
+									}
+								}
+
+							} else if (registNeed) {
+
+								if ((jobArr[i][0]+"").toLowerCase() == (jobArr[j][0] + "").toLowerCase()) {
+								
+									if (counter == 0) {
+
+										end.push(jobArr[j]);
+										end.push(jobArr[i]);
+
+										jobArr[j] = undefined;
+										counter++;
+
+									} else {
+
+										end.push(jobArr[j]);
+										jobArr[j] = undefined;
+
+									}
+
+								} else {
+
+									for (var s = 0;s <= jobArr.length;s++) {
+										
+										if (jobArr[i] != undefined && jobArr[s] != undefined) {
+
+
+											if ((jobArr[i][0]+"").toLowerCase() == (jobArr[s][0]+"").toLowerCase()) {
+												
+											} else {
+												
+												if (end.length >= 1) {
+												
+												} else {
+
+													end.push(jobArr[i]);
+													jobArr[i] = undefined;
+												}
+											}
+										} else {
+										}	
+									}
+								}
+
+							} else if (spaceNeed) {
+
+								var strSearch1 = (jobArr[i][0]+"").replace(/ /ig, "");
+								var strSearch2 = (jobArr[j][0]+"").replace(/ /ig, "");
+
+								if (strSearch1 == strSearch2) {
+								
+									if (counter == 0) {
+
+										end.push(jobArr[j]);
+										end.push(jobArr[i]);
+
+										jobArr[j] = undefined;
+										counter++;
+
+									} else {
+
+										end.push(jobArr[j]);
+										jobArr[j] = undefined;
+
+									}
+
+								} else {
+
+									for (var s = 0;s <= jobArr.length;s++) {
+										
+										if (jobArr[i] != undefined && jobArr[s] != undefined) {
+
+											var strSearch3 = (jobArr[s][0]+"").replace(/ /ig, "");
+
+											if (strSearch1 == strSearch3) {
+												
+											} else {
+												
+												if (end.length >= 1) {
+												
+												} else {
+
+													end.push(jobArr[i]);
+													jobArr[i] = undefined;
+												}
+											}
+										} else {
+										}	
+									}
+								}
+
+							} else {
+
+								if (jobArr[i][0] == jobArr[j][0]) {
+								
+									if (counter == 0) {
+
+										end.push(jobArr[j]);
+										end.push(jobArr[i]);
+
+										jobArr[j] = undefined;
+										counter++;
+
+									} else {
+
+										end.push(jobArr[j]);
+										jobArr[j] = undefined;
+
+									}
+
+								} else {
+
+									for (var s = 0;s <= jobArr.length;s++) {
+										
+										if (jobArr[i] != undefined && jobArr[s] != undefined) {
+
+											if (jobArr[i][0] == jobArr[s][0]) {
+												
+											} else {
+												
+												if (end.length >= 1) {
+												
+												} else {
+
+													end.push(jobArr[i]);
+													jobArr[i] = undefined;
+												}
+											}
+										} else {
+										}	
+									}
+								}
+							}
+						}
+					}
+
+					mathSTR(end);
+
+					if (jobArr[i] != undefined) { // Добавление последнего единичного символа
+						end = [];
+						if (jobArr.length == i+1) {
+							end.push(jobArr[i]);
+							jobArr[i] = undefined;
+							mathSTR(end);
+						}	
+					}
+				}
+			}
+
+
+			function mathSTR (arr) {	//Расчет
+				
+				var endArr = [];
+
+				for (var k = 0;k < count;k++) {
+					endArr[k] = 0;
+				}
+				
+				if (arr.length <= 0) {
+
+				} else {
+					endArr.unshift(arr[0][0]);
+					var str = '';
+					for (var i = 0;i < arr.length;i++) {
+						for (var j = 1; j < arr[i].length;j++) {
+
+							if (typeof arr[i][j] == typeof str){
+						
+								if ( !isNaN(parseInt(arr[i][j])) ) {
+
+									str = arr[i][j];
+									str = str.replace(/\s+/g,'');
+									str = str.replace(/,/g,'.');
+									arr[i][j] = parseFloat(str)/100;
+
+								}
+							}
+
+							endArr[j] += arr[i][j];
+						}
+					}
+					endArr.pop();
+					
+					viewInfo(endArr);
+				}
+			}
+			function viewInfo (arr) {   //Отображение расчета
+				
+				var holderEndInfo = $('.result-box')[0];
+				var row = document.createElement('span');
+				$(row).addClass("row");
+			
+				for (var x = 0; x < count;x++) {
+					var col = document.createElement('span');
+					var widthCol = 98/count;
+					$(col).addClass('col');
+					$(col).css('width',widthCol + "%");
+
+					if (!isNaN(arr[x])) {
+						if (arr[x] == 0 ) {
+							$(col).text(arr[x]);
+						} else {
+							var numberTest = arr[x] + "";
+							if (numberTest.length > 4) {
+								
+								arr[x] = arr[x].toFixed(1);
+								$(col).text(arr[x]);
+
+							} else {
+								$(col).text(arr[x]);
+							}
+						}
+					} else {
+
+						$(col).text(arr[x]);
+
+					}
+					
+					row.appendChild(col);
+
+				}
+
+				holderEndInfo.appendChild(row);
+
+			}
+
+			//________________________________________________________СТАРТ ПРИЛОЖЕНИЯ ____________________________
+			//_____________________________________________________________________________________________________
+
+			var count = +$('.counter').val();
+
+			if (count == 0) {
+
+				$('.infoButton').text("Не может быть пустым , или ровняться нулю!!");
+
+			} else if (!!isNaN(count)) {
+
+				$('.infoButton').text("Только Числа !!");
+
+			} else if (!($(allRowLength[0]).find('Data').length == count)) {
+
+				$('.infoButton').text("Не ври на счет столбцов, я все равно узнаю :)");
+
+			} else {
+
+				
+				var time = performance.now();
+				// Спид тест
+
+				parseArr(arr,count);
+
+				var xml;  //Создание нового файла
+
+			    if(window.XMLHttpRequest) {  
+			        xml=new window.XMLHttpRequest();  
+			        xml.open("GET", 'upload/workSpace.xml', false);  
+			        xml.send("");  		       
+			    }  
+			    else  {
+			        
+			        if(window.ActiveXObject) {  
+			            xml=new ActiveXObject("Microsoft.XMLDOM");  
+			            xml.async=false;  
+			            xml.load(url);   
+			            return xml;   
+			        }  else  {  
+			            alert("Загрузка XML не поддерживается браузером");  
+			            return null;  
+			        }  
+			    }
+
+
+			 
+
+
+			    xml = xml.responseXML;
+
+			    var xmlData = xml.getElementsByTagName('Data');
+
+			    var newXMLitem = $('.result-box .col');
+
+
+
+
+			    for (var i = 0;i < xmlData.length;i++) {
+		    		if (newXMLitem[i] == undefined) {
+		    			$(xmlData[i]).text('');
+
+
+		    		} else {
+		    			
+		    			var item = $(newXMLitem[i]).text();
+		    	  		$(xmlData[i]).text(item);
+
+		    			var strObj = xmlData[i].outerHTML;
+
+		    	  		var testItem = $(newXMLitem[i]).text();
+
+		    			if (!isNaN(testItem)) { // Переструктурирование XML DOM в зависимости от типа данных в ячейке
+
+		    				xmlData[i].outerHTML = strObj.replace('ss:Type="String"','ss:Type="Number"');
+
+		    			} else if (typeof testItem == typeof "string") {
+
+		    				xmlData[i].outerHTML = strObj.replace('ss:Type="Number"','ss:Type="String"');
+
+		    			}	    			
+
+		    		}
+
+			    }
+
+				var serializer = new XMLSerializer();
+				serialized = serializer.serializeToString(xml);
+
+			    $.ajax({
+				  type: "POST",
+				  url: "some.php",
+				  data: "string=" + serialized,
+				  response:"text",
+				  success: function(msg){
+				  	
+				  }
+				});
+
+			    var countOld = xml.getElementsByTagName('Row');
+				var countRow = $('.result-box .row');
+				
+
+				var procent = (100 - (countRow.length/countOld.length * 100)).toFixed(0) + "%";
+				
+
+
+				$('.procent').text(procent);
+				$('.countRowOld').text(+countOld.length);
+				$('.countRowNew').text(+countRow.length);
+				$('.infoButton').text("Успешно");
+
+				time = performance.now() - time;
+				$('.timeUp').text(+time.toFixed(0) + " Мс");
+
+				
+			}
+
+		});
+
+
+
+	</script>
+
+</html>
